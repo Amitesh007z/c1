@@ -38,7 +38,7 @@ function C1Chatbot({ selectedProject = 'combined_c1_all' }) {
                 src={embedUrl}
                 title="C1 Chatbot"
                 allow="microphone; camera; clipboard-write; storage-access; focus-without-user-activation"
-                sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+            // Removed sandbox as it can interfere with popup-to-iframe communication during auth
             />
         </div>
     );
