@@ -1,5 +1,10 @@
 import { useEffect, useRef } from 'react';
 
+/**
+ * C1Chatbot Component - Production Standard Bridge
+ * This component handles the complex iframe-parent communication required for 
+ * stable authentication on production environments (like Netlify).
+ */
 function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
     const iframeRef = useRef(null);
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -13,6 +18,7 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
         parent_url: origin
     });
 
+    // Approach A: Passing token directly (Recommended for Production)
     if (token) {
         params.append('token', token);
     }
@@ -24,38 +30,53 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
             // Only accept messages from the chatbot origin
             if (event.origin !== 'https://chat.crowd1.com') return;
 
-            console.log('📬 [C1Chatbot] Message received:', event.data?.type, event.data);
+            const { type, loginUrl } = event.data || {};
+            console.log(`📬 [C1Chatbot Bridge] Received: ${type}`, event.data);
 
-            // 1. Handle C1_AUTH_REQUEST
-            if (event.data?.type === 'C1_AUTH_REQUEST') {
-                event.source.postMessage({
-                    type: 'C1_AUTH_RESPONSE',
-                    isAuthenticated: false,
-                    user: null
-                }, event.origin);
-            }
+            switch (type) {
+                case 'IFRAME_READY':
+                    console.log('✨ Chatbot iframe is ready and registered');
+                    break;
 
-            // 2. Handle SSO_LOGIN fallback (The "Parent Proxy" Fix)
-            // When the iframe is blocked from opening popups, it asks the parent to do it.
-            if (event.data?.type === 'SSO_LOGIN' && event.data.loginUrl) {
-                console.log('🚀 [C1Chatbot] Proxying SSO Login to parent window');
-                window.open(event.data.loginUrl, 'C1AuthPopup', 'width=600,height=800');
-            }
+                case 'REQUEST_AUTH':
+                    console.log('🔐 Responding to auth initialization');
+                    event.source.postMessage({
+                        type: 'C1_AUTH_RESPONSE',
+                        isAuthenticated: !!token,
+                        user: null // In production, you could pass user details here if authenticated
+                    }, event.origin);
+                    break;
 
-            // 3. Handle C1_AUTH_SUCCESS
-            // If the popup was opened by the parent, the success message comes here first.
-            // We must forward it down to the iframe so the chatbot knows it's logged in.
-            if (event.data?.type === 'C1_AUTH_SUCCESS') {
-                console.log('✅ [C1Chatbot] Login Success! Forwarding to iframe...');
-                if (iframeRef.current && iframeRef.current.contentWindow) {
-                    iframeRef.current.contentWindow.postMessage(event.data, 'https://chat.crowd1.com');
-                }
+                case 'SSO_LOGIN':
+                    // Critical Fix: If the iframe's internal popup is blocked, the parent opens it.
+                    if (loginUrl) {
+                        console.log('🚀 Proxying SSO login to parent window');
+                        window.open(loginUrl, 'C1AuthPopup', 'width=600,height=800');
+                    }
+                    break;
+
+                case 'C1_AUTH_SUCCESS':
+                    console.log('✅ Authentication Successful! Catching and forwarding to iframe.');
+                    // If the popup was opened by the parent, the success message comes here.
+                    // We must forward it down into the iframe so the chatbot logs in.
+                    if (iframeRef.current && iframeRef.current.contentWindow) {
+                        iframeRef.current.contentWindow.postMessage(event.data, 'https://chat.crowd1.com');
+                    }
+                    break;
+
+                case 'C1_AUTH_ERROR':
+                    console.error('❌ Authentication Error:', event.data.message);
+                    break;
+
+                default:
+                    // Log other messages for debugging
+                    break;
             }
         };
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, []);
+    }, [token]);
 
     return (
         <div className="c1-chatbot-container">
