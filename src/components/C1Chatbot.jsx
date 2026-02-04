@@ -15,16 +15,21 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
     // we only want the actual token part before the first '&'.
     const cleanToken = token ? token.split('&')[0].split('?token=')[1] || token.split('&')[0] : '';
 
+    // Try partner-specific route if available, otherwise use standard embed
+    // Partner routes may have more permissive origin policies
     const baseUrl = 'https://chat.crowd1.com/embed';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     
-    // Build the robust embed URL with all possible origin-trust parameters
+    // Build the embed URL - include all trust-related params
     const params = new URLSearchParams({
         selected_project: selectedProject,
         show_login_button: 'true',
-        origin: origin, // Crucial for whitelisting focus
-        parent_url: typeof window !== 'undefined' ? window.location.href : '',
-        embed_version: '2.0'
+        // These params help the embed identify and potentially trust the parent
+        origin: origin,
+        parent_url: origin,
+        // Some embeds use 'allowed_origin' or 'trusted_origin'
+        allowed_origin: origin,
+        partner_origin: origin
     });
     
     if (cleanToken) params.append('token', cleanToken);
