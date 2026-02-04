@@ -10,24 +10,19 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
     const popupRef = useRef(null);
     const lastBlurTime = useRef(0);
     const reloadScheduled = useRef(false);
+    const hasLoggedOriginInfo = useRef(false);
 
-    // Clean the token: If the user pasted a string like "TOKEN&refresh_token=...", 
-    // we only want the actual token part before the first '&'.
+    // Clean the token
     const cleanToken = token ? token.split('&')[0].split('?token=')[1] || token.split('&')[0] : '';
 
-    // Try partner-specific route if available, otherwise use standard embed
-    // Partner routes may have more permissive origin policies
     const baseUrl = 'https://chat.crowd1.com/embed';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     
-    // Build the embed URL - include all trust-related params
     const params = new URLSearchParams({
         selected_project: selectedProject,
         show_login_button: 'true',
-        // These params help the embed identify and potentially trust the parent
         origin: origin,
         parent_url: origin,
-        // Some embeds use 'allowed_origin' or 'trusted_origin'
         allowed_origin: origin,
         partner_origin: origin
     });
@@ -35,10 +30,26 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
     if (cleanToken) params.append('token', cleanToken);
     const embedUrl = `${baseUrl}?${params.toString()}`;
 
+    // Log origin info once on mount for debugging
+    useEffect(() => {
+        if (!hasLoggedOriginInfo.current) {
+            hasLoggedOriginInfo.current = true;
+            console.log('\n');
+            console.log('%c═══════════════════════════════════════════════════════════════', 'color: #4F46E5; font-weight: bold;');
+            console.log('%c   C1 CHATBOT EMBED - INTEGRATION DEBUG INFO', 'color: #4F46E5; font-size: 14px; font-weight: bold;');
+            console.log('%c═══════════════════════════════════════════════════════════════', 'color: #4F46E5; font-weight: bold;');
+            console.log('%c Parent Origin: %c' + origin, 'color: #888;', 'color: #10B981; font-weight: bold;');
+            console.log('%c Embed URL:     %c' + baseUrl, 'color: #888;', 'color: #3B82F6;');
+            console.log('%c Project:       %c' + selectedProject, 'color: #888;', 'color: #F59E0B;');
+            console.log('%c═══════════════════════════════════════════════════════════════', 'color: #4F46E5; font-weight: bold;');
+            console.log('\n');
+        }
+    }, [origin, selectedProject]);
+
     const reloadIframe = useCallback(() => {
         if (iframeRef.current && !reloadScheduled.current) {
             reloadScheduled.current = true;
-            console.log('🔄 [C1Chatbot] Syncing/Reloading iframe...');
+            console.log('%c[C1Chatbot] Reloading iframe to sync auth state...', 'color: #3B82F6;');
             const currentSrc = iframeRef.current.src;
             iframeRef.current.src = '';
             setTimeout(() => {
@@ -51,10 +62,9 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
     useEffect(() => {
         const handleFocus = () => {
             const blurDuration = Date.now() - lastBlurTime.current;
-            // If return from popup (roughly > 3s), refresh the view
             if (lastBlurTime.current > 0 && blurDuration > 3000) {
-                console.log('👁️ [C1Chatbot] Tab regained focus - refreshing state');
-                setTimeout(reloadIframe, 1000); // Give it a second to settle
+                console.log('%c[C1Chatbot] Tab regained focus after ' + Math.round(blurDuration/1000) + 's - refreshing', 'color: #8B5CF6;');
+                setTimeout(reloadIframe, 1000);
             }
             lastBlurTime.current = 0;
         };
@@ -75,29 +85,35 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
 
             const data = event.data || {};
             const { type, loginUrl } = data;
-            
-            // Check for potential token inside nested data if the redirect page tries to send it
             const potentialToken = data.token || data.id_token || data.payload?.token;
 
-            console.log(`📬 [C1Chatbot] PostMessage: ${type}`, data);
+            // Minimal logging for routine messages
+            if (type === 'IFRAME_READY') {
+                console.log('%c✓ [C1Chatbot] Iframe connected', 'color: #10B981;');
+                return;
+            }
+
+            if (type === 'REQUEST_AUTH') {
+                console.log('%c→ [C1Chatbot] Sending auth response to iframe...', 'color: #3B82F6;');
+                event.source?.postMessage({
+                    type: 'C1_AUTH_RESPONSE',
+                    isAuthenticated: !!cleanToken,
+                    token: cleanToken
+                }, event.origin);
+                
+                // This is where the problem shows up - log it clearly
+                console.log('\n');
+                console.log('%c⚠️  IMPORTANT: Watch for "untrusted origin" error below ⚠️', 'color: #F59E0B; font-size: 12px; font-weight: bold;');
+                console.log('%c   If you see: "🚫 Message from untrusted origin: ' + origin + '"', 'color: #EF4444;');
+                console.log('%c   This means Crowd1 embed is REJECTING messages from your domain.', 'color: #EF4444;');
+                console.log('\n');
+                return;
+            }
 
             switch (type) {
-                case 'IFRAME_READY':
-                    console.log('✨ [C1Chatbot] Bridge connected');
-                    break;
-
-                case 'REQUEST_AUTH':
-                    console.log('🔐 [C1Chatbot] Answering auth request');
-                    event.source?.postMessage({
-                        type: 'C1_AUTH_RESPONSE',
-                        isAuthenticated: !!cleanToken,
-                        token: cleanToken
-                    }, event.origin);
-                    break;
-
                 case 'SSO_LOGIN':
                     if (loginUrl) {
-                        console.log('🚀 [C1Chatbot] Opening login popup');
+                        console.log('%c→ [C1Chatbot] Opening login popup...', 'color: #8B5CF6;');
                         popupRef.current = window.open(loginUrl, 'C1AuthPopup', 'width=600,height=800');
                     }
                     break;
@@ -105,15 +121,14 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
                 case 'C1_AUTH_SUCCESS':
                 case 'AUTH_SUCCESS':
                 case 'LOGIN_SUCCESS':
-                    console.log('✅ [C1Chatbot] Auth Success!');
+                    console.log('%c✓ [C1Chatbot] Auth Success!', 'color: #10B981; font-weight: bold;');
                     if (popupRef.current && !popupRef.current.closed) popupRef.current.close();
                     reloadIframe();
                     break;
 
                 default:
-                    // If we see a token in any message, it might be the redirected success
                     if (potentialToken) {
-                        console.log('🎫 [C1Chatbot] Token detected in message, reloading...');
+                        console.log('%c✓ [C1Chatbot] Token detected, reloading...', 'color: #10B981;');
                         reloadIframe();
                     }
                     break;
@@ -122,7 +137,7 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [cleanToken, reloadIframe]);
+    }, [cleanToken, reloadIframe, origin]);
 
     return (
         <div className="c1-chatbot-container">
