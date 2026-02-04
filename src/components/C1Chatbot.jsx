@@ -153,18 +153,3 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
 }
 
 export default C1Chatbot;
-
-    return (
-        <div className="c1-chatbot-container">
-            <iframe
-                ref={iframeRef}
-                id="c1-chatbot-iframe"
-                src={embedUrl}
-                title="C1 Chatbot"
-                allow="microphone; camera; clipboard-write; storage-access; focus-without-user-activation; identity-credentials-get; publickey-credentials-get"
-            />
-        </div>
-    );
-}
-
-export default C1Chatbot;
