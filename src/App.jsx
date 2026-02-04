@@ -1,8 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import C1Chatbot from './components/C1Chatbot'
 
 function App() {
-    const [testToken, setTestToken] = useState('');
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Force refresh the chatbot iframe
@@ -37,24 +36,13 @@ function App() {
                         padding: '1.5rem',
                         background: 'rgba(255,255,255,0.05)',
                         borderRadius: '12px',
-                        textAlign: 'left',
+                        textAlign: 'center',
                         maxWidth: '500px',
                         margin: '3rem auto 0'
                     }}>
-                        <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: 'var(--color-primary)' }}>
-                            🛠️ SSO Integration Test
-                        </h3>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-                            Paste a C1 SSO token below to test automatic login, or use popup login and click Refresh after.
+                        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+                            After logging in via popup, click below to sync the chatbot.
                         </p>
-                        <input
-                            type="text"
-                            placeholder="Enter C1 Access Token..."
-                            value={testToken}
-                            onChange={(e) => setTestToken(e.target.value)}
-                            className="token-display"
-                            style={{ color: 'var(--color-text)', marginBottom: '1rem' }}
-                        />
                         <button
                             onClick={handleRefreshChatbot}
                             style={{
@@ -70,7 +58,7 @@ function App() {
                                 fontSize: '0.9rem'
                             }}
                         >
-                            🔄 Refresh Chatbot (after popup login)
+                            🔄 Refresh Chatbot
                         </button>
                     </div>
                 </section>
@@ -81,7 +69,7 @@ function App() {
             </footer>
 
             {/* C1 Chatbot - Production Bridge. Key forces remount on refresh */}
-            <C1Chatbot key={refreshKey} selectedProject="combined_c1_all" token={testToken} />
+            <C1Chatbot key={refreshKey} selectedProject="combined_c1_all" />
         </div>
     )
 }
