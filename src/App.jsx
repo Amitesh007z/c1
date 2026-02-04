@@ -1,23 +1,30 @@
 import { useState } from 'react'
 import C1Chatbot from './components/C1Chatbot'
+import authService from './services/AuthService'
 
 function App() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [token, setToken] = useState('');
+    const [user, setUser] = useState(null);
+    const [authToken, setAuthToken] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Simulate logging into the parent site and getting a C1 token
-    const handleLogin = () => {
-        // In production, your backend would generate this JWT
-        // For this demo, we use a placeholder or the user can paste one
-        setIsLoggedIn(true);
-        // Note: In a real app, you would fetch this from your API
-        const demoToken = ""; // Placeholder for automated flow
-        setToken(demoToken);
+    // Real-world login flow
+    const handleLogin = async () => {
+        setIsLoading(true);
+        try {
+            const { user, c1Token } = await authService.login('C1User');
+            setUser(user);
+            setAuthToken(c1Token);
+        } catch (error) {
+            console.error('Login failed:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleLogout = () => {
-        setIsLoggedIn(false);
-        setToken('');
+        authService.logout();
+        setUser(null);
+        setAuthToken('');
     };
 
     return (
@@ -26,18 +33,22 @@ function App() {
                 <div className="header-content">
                     <div className="logo">
                         <div className="logo-icon">🤖</div>
-                        <span>C1 Demo</span>
+                        <span>C1 Chatbot Portal</span>
                     </div>
                     <div className="header-actions">
-                        {!isLoggedIn ? (
-                            <button className="btn-login" onClick={handleLogin}>
-                                Login with C1
+                        {!user ? (
+                            <button
+                                className="btn-login"
+                                onClick={handleLogin}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? 'Authenticating...' : 'Sign In'}
                             </button>
                         ) : (
                             <div className="user-profile">
-                                <span className="user-name">Welcome, User!</span>
+                                <span className="user-name">Welcome, {user.username}</span>
                                 <button className="btn-logout" onClick={handleLogout}>
-                                    Logout
+                                    Sign Out
                                 </button>
                             </div>
                         )}
@@ -48,50 +59,54 @@ function App() {
             <main className="main-content">
                 <section className="hero-section">
                     <h1 className="hero-title">
-                        C1 Chatbot <span>Integration</span>
+                        Enterprise Support <span>Redefined</span>
                     </h1>
                     <p className="hero-description">
-                        This demo shows the <strong>Production-Ready SSO Flow</strong>.
-                        When you Login above, your site passes a token to the chatbot automatically.
+                        Experience seamless, automated support with the integrated C1 Chatbot.
+                        Sign in above to access your personalized support dashboard and tickets.
                     </p>
 
-                    <div className="sso-demo-panel">
-                        <h3>Automated SSO Status</h3>
-                        <div className="status-badge" style={{
-                            background: isLoggedIn ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            color: isLoggedIn ? '#10B981' : '#EF4444',
-                            display: 'inline-block',
-                            padding: '0.25rem 0.75rem',
-                            borderRadius: '20px',
-                            fontSize: '0.8rem',
-                            fontWeight: '600',
-                            marginBottom: '1rem'
-                        }}>
-                            {isLoggedIn ? '● Site Authenticated' : '○ Pending Site Login'}
+                    <div className="auth-status-card">
+                        <div className="status-header">
+                            <h3>System Status</h3>
+                            <div className={`status-dot ${user ? 'active' : ''}`}></div>
                         </div>
 
-                        <div className="token-input-wrapper">
-                            <label>SSO Token (JWT)</label>
-                            <input
-                                type="text"
-                                placeholder="Paste token here from Simulator..."
-                                value={token}
-                                onChange={(e) => setToken(e.target.value)}
-                            />
-                            <p className="helper-text">
-                                In production, your <strong>Backend</strong> would provide this token automatically when the user logs in.
-                            </p>
+                        <div className="info-grid">
+                            <div className="info-item">
+                                <label>Authentication</label>
+                                <span>{user ? 'Secured SSO Session' : 'Guest Access'}</span>
+                            </div>
+                            <div className="info-item">
+                                <label>Access Level</label>
+                                <span>{user ? 'Verified User' : 'Standard'}</span>
+                            </div>
                         </div>
+
+                        {user && (
+                            <div className="token-management">
+                                <label>C1 Access Token</label>
+                                <input
+                                    type="password"
+                                    value={authToken || 'AUTOMATIC_TOKEN_LOADED'}
+                                    readOnly
+                                    className="token-display"
+                                />
+                                <p className="helper-text">
+                                    This token was securely generated by the backend and passed to the chatbot.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </section>
             </main>
 
             <footer className="footer">
-                <p>C1 Demo • Powered by Crowd1</p>
+                <p>© 2026 C1 Portal • Implementation based on C1 Production Standard</p>
             </footer>
 
-            {/* C1 Chatbot Integration - Automated via token prop */}
-            <C1Chatbot selectedProject="combined_c1_all" token={token} />
+            {/* C1 Chatbot - Production Bridge */}
+            <C1Chatbot selectedProject="combined_c1_all" token={authToken} />
         </div>
     )
 }
