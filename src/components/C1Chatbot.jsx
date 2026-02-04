@@ -19,7 +19,7 @@ function C1Chatbot({ selectedProject = 'combined_c1_all' }) {
                 id="c1-chatbot-iframe"
                 src={embedUrl}
                 title="C1 Chatbot"
-                allow="microphone"
+                allow="microphone; camera; clipboard-write; storage-access; focus-without-user-activation"
             />
         </div>
     );
