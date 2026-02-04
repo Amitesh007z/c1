@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
-    // Build the embed URL with origin/parent_url to help with redirect authorization
+    const iframeRef = useRef(null);
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
+
+    // Build the embed URL
     const baseUrl = 'https://chat.crowd1.com/embed';
     const params = new URLSearchParams({
         selected_project: selectedProject,
@@ -24,10 +26,8 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
 
             console.log('📬 [C1Chatbot] Message received:', event.data?.type, event.data);
 
-            // Handle C1_AUTH_REQUEST: Internal login flow initialization
+            // 1. Handle C1_AUTH_REQUEST
             if (event.data?.type === 'C1_AUTH_REQUEST') {
-                console.log('🔐 [C1Chatbot] Responding to auth request (Guest Mode fallback)');
-                // Responding tells the chatbot we are listening, which can help initialize the Channel ID
                 event.source.postMessage({
                     type: 'C1_AUTH_RESPONSE',
                     isAuthenticated: false,
@@ -35,10 +35,21 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
                 }, event.origin);
             }
 
-            // Handle C1_AUTH_SUCCESS: Close the hang and refresh state
+            // 2. Handle SSO_LOGIN fallback (The "Parent Proxy" Fix)
+            // When the iframe is blocked from opening popups, it asks the parent to do it.
+            if (event.data?.type === 'SSO_LOGIN' && event.data.loginUrl) {
+                console.log('🚀 [C1Chatbot] Proxying SSO Login to parent window');
+                window.open(event.data.loginUrl, 'C1AuthPopup', 'width=600,height=800');
+            }
+
+            // 3. Handle C1_AUTH_SUCCESS
+            // If the popup was opened by the parent, the success message comes here first.
+            // We must forward it down to the iframe so the chatbot knows it's logged in.
             if (event.data?.type === 'C1_AUTH_SUCCESS') {
-                console.log('✅ [C1Chatbot] User authenticated successfully');
-                // Optional: You could trigger a state update in the parent app here
+                console.log('✅ [C1Chatbot] Login Success! Forwarding to iframe...');
+                if (iframeRef.current && iframeRef.current.contentWindow) {
+                    iframeRef.current.contentWindow.postMessage(event.data, 'https://chat.crowd1.com');
+                }
             }
         };
 
@@ -49,11 +60,11 @@ function C1Chatbot({ selectedProject = 'combined_c1_all', token = '' }) {
     return (
         <div className="c1-chatbot-container">
             <iframe
+                ref={iframeRef}
                 id="c1-chatbot-iframe"
                 src={embedUrl}
                 title="C1 Chatbot"
                 allow="microphone; camera; clipboard-write; storage-access; focus-without-user-activation; identity-credentials-get; publickey-credentials-get"
-            // Important: No sandbox, and no extra restrictions
             />
         </div>
     );
