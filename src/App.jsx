@@ -69,7 +69,7 @@ function App() {
             </footer>
 
             {/* C1 Chatbot - Production Bridge. Key forces remount on refresh */}
-            <C1Chatbot key={refreshKey} selectedProject="combined_c1_all" />
+            <C1Chatbot key={refreshKey} selectedProject="combined_c1" />
         </div>
     )
 }
