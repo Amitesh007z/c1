@@ -7,14 +7,18 @@ const C1_ACCESS_API = '/.netlify/functions/c1-auth';
 function App() {
     const [refreshKey, setRefreshKey] = useState(0);
     const [authToken, setAuthToken] = useState(null);
+    const [userEmail, setUserEmail] = useState(null);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
 
     // Check for stored token on mount
     useEffect(() => {
         const storedToken = localStorage.getItem('c1_auth_token');
+        const storedEmail = localStorage.getItem('c1_auth_email');
         if (storedToken) {
             console.log('✅ [App] Found stored auth token');
+            console.log('✅ [App] Stored email:', storedEmail);
             setAuthToken(storedToken);
+            setUserEmail(storedEmail);
         }
     }, []);
 
@@ -24,7 +28,10 @@ function App() {
         localStorage.removeItem('c1_auth_token');
         localStorage.removeItem('c1_auth_uid');
         localStorage.removeItem('c1_auth_refresh');
+        localStorage.removeItem('c1_auth_email');
+        localStorage.removeItem('c1_auth_name');
         setAuthToken(null);
+        setUserEmail(null);
         setRefreshKey(k => k + 1);
     };
 
@@ -222,8 +229,8 @@ function App() {
                 <p>C1 Demo • Powered by Crowd1</p>
             </footer>
 
-            {/* C1 Chatbot - Pass the token if we have one */}
-            <C1Chatbot key={refreshKey} selectedProject="combined_c1" token={authToken || ''} />
+            {/* C1 Chatbot - Pass the token and email if we have them */}
+            <C1Chatbot key={refreshKey} selectedProject="combined_c1" token={authToken || ''} email={userEmail || ''} />
         </div>
     )
 }

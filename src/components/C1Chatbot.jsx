@@ -5,7 +5,7 @@ import { useEffect, useRef, useCallback } from 'react';
  * Handles iframe-parent communication for auth on production environments (e.g. Netlify).
  * Supports guest chat + popup-based SSO login flow.
  */
-function C1Chatbot({ selectedProject = 'combined_c1', token = '' }) {
+function C1Chatbot({ selectedProject = 'combined_c1', token = '', email = '' }) {
     const iframeRef = useRef(null);
     const popupRef = useRef(null);
     const lastBlurTime = useRef(0);
@@ -28,6 +28,8 @@ function C1Chatbot({ selectedProject = 'combined_c1', token = '' }) {
     });
     
     if (cleanToken) params.append('token', cleanToken);
+    if (email) params.append('email', email);
+    if (email) params.append('user_email', email);
     const embedUrl = `${baseUrl}?${params.toString()}`;
 
     // Log origin info once on mount for debugging
