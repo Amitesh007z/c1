@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import C1Chatbot from './components/C1Chatbot'
 
-// API endpoint for getting Crowd1 access token
-const C1_ACCESS_API = 'https://chat-api.crowd1.com/api/v1/crowd1/access';
+// Use our own Netlify function to proxy the Crowd1 API (avoids CORS)
+const C1_ACCESS_API = '/.netlify/functions/c1-auth';
 
 function App() {
     const [refreshKey, setRefreshKey] = useState(0);
