@@ -18,12 +18,6 @@ function App() {
         }
     }, []);
 
-    // Force refresh the chatbot iframe
-    const handleRefreshChatbot = () => {
-        console.log('🔄 [App] Manually refreshing chatbot...');
-        setRefreshKey(k => k + 1);
-    };
-
     // Logout - clear stored token
     const handleLogout = () => {
         console.log('🚪 [App] Logging out...');
@@ -111,14 +105,16 @@ function App() {
                         The chatbot bubble should appear in the bottom-right corner.
                     </p>
 
-                    <div className="sso-test-section" style={{
+                    <div className="auth-section" style={{
                         marginTop: '3rem',
-                        padding: '1.5rem',
-                        background: 'rgba(255,255,255,0.05)',
-                        borderRadius: '12px',
+                        padding: '2rem',
+                        background: 'linear-gradient(145deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%)',
+                        borderRadius: '16px',
                         textAlign: 'center',
-                        maxWidth: '500px',
-                        margin: '3rem auto 0'
+                        maxWidth: '400px',
+                        margin: '3rem auto 0',
+                        border: '1px solid rgba(79, 70, 229, 0.2)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
                     }}>
                         {authToken ? (
                             <>
@@ -126,59 +122,95 @@ function App() {
                                     display: 'flex', 
                                     alignItems: 'center', 
                                     justifyContent: 'center',
-                                    gap: '0.5rem',
-                                    marginBottom: '1rem',
-                                    color: '#10B981'
+                                    gap: '0.75rem',
+                                    marginBottom: '0.5rem'
                                 }}>
-                                    <span style={{ fontSize: '1.5rem' }}>✅</span>
-                                    <span style={{ fontWeight: '600' }}>Logged in with Crowd1</span>
+                                    <span style={{ 
+                                        fontSize: '2.5rem',
+                                        filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.5))'
+                                    }}>✅</span>
                                 </div>
-                                <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-                                    You can now use all chatbot features including ticket creation.
+                                <h3 style={{ 
+                                    fontSize: '1.25rem',
+                                    fontWeight: '700',
+                                    color: '#10B981',
+                                    marginBottom: '0.5rem'
+                                }}>You're Logged In!</h3>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                                    All chatbot features are now available.
                                 </p>
-                                <button
-                                    onClick={handleRefreshChatbot}
-                                    style={{
-                                        display: 'block',
-                                        width: '100%',
-                                        padding: '0.75rem 1rem',
-                                        background: 'var(--gradient-primary)',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        fontWeight: '600',
-                                        fontSize: '0.9rem'
-                                    }}
-                                >
-                                    🔄 Refresh Chatbot
-                                </button>
                             </>
                         ) : (
                             <>
-                                <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-                                    Login to access all features including ticket creation.
-                                </p>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <span style={{ 
+                                        fontSize: '3rem',
+                                        display: 'block',
+                                        marginBottom: '0.5rem'
+                                    }}>🔐</span>
+                                    <h3 style={{ 
+                                        fontSize: '1.1rem',
+                                        fontWeight: '600',
+                                        color: 'var(--color-text)',
+                                        marginBottom: '0.5rem'
+                                    }}>Unlock Full Features</h3>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                                        Login to create tickets and access all features.
+                                    </p>
+                                </div>
                                 <button
                                     onClick={handleLogin}
                                     disabled={isLoggingIn}
                                     style={{
-                                        display: 'block',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.75rem',
                                         width: '100%',
-                                        padding: '0.75rem 1rem',
-                                        background: isLoggingIn ? '#666' : 'var(--gradient-primary)',
+                                        padding: '1rem 1.5rem',
+                                        background: isLoggingIn 
+                                            ? 'rgba(100, 100, 100, 0.5)' 
+                                            : 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #9333EA 100%)',
                                         color: 'white',
                                         border: 'none',
-                                        borderRadius: '8px',
+                                        borderRadius: '12px',
                                         cursor: isLoggingIn ? 'not-allowed' : 'pointer',
-                                        fontWeight: '600',
-                                        fontSize: '0.9rem'
+                                        fontWeight: '700',
+                                        fontSize: '1.1rem',
+                                        boxShadow: isLoggingIn ? 'none' : '0 4px 20px rgba(79, 70, 229, 0.4)',
+                                        transition: 'all 0.3s ease',
+                                        transform: isLoggingIn ? 'none' : 'translateY(0)',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isLoggingIn) {
+                                            e.target.style.transform = 'translateY(-2px)';
+                                            e.target.style.boxShadow = '0 6px 24px rgba(79, 70, 229, 0.5)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.target.style.transform = 'translateY(0)';
+                                        e.target.style.boxShadow = '0 4px 20px rgba(79, 70, 229, 0.4)';
                                     }}
                                 >
-                                    {isLoggingIn ? '⏳ Connecting...' : '🔐 Login with Crowd1'}
+                                    {isLoggingIn ? (
+                                        <>
+                                            <span style={{ 
+                                                animation: 'spin 1s linear infinite',
+                                                display: 'inline-block'
+                                            }}>⏳</span>
+                                            Connecting...
+                                        </>
+                                    ) : (
+                                        <>Login with Crowd1</>
+                                    )}
                                 </button>
-                                <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '1rem' }}>
-                                    Guest chat is available without login.
+                                <p style={{ 
+                                    fontSize: '0.8rem', 
+                                    color: 'var(--color-text-muted)', 
+                                    marginTop: '1.25rem',
+                                    opacity: 0.7
+                                }}>
+                                    💬 Guest chat available without login
                                 </p>
                             </>
                         )}
